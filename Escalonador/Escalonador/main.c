@@ -44,14 +44,14 @@ int main()
 
 	f1 = (Process*)malloc(sizeof(Process));
 
-	do
-	{
-		for (i = 0; i < stream[0]; i++)
-		{
-			printf("%d\n", getpid());
-			sleep(1);
-		}
-	} while (1);
+//	do
+//	{
+//		for (i = 0; i < stream[0]; i++)
+//		{
+//			printf("%d\n", getpid());
+//			sleep(1);
+//		}
+//	} while (1);
 
 	return 0;
 }
