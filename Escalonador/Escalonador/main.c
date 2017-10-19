@@ -67,7 +67,8 @@ int main()
 	ProcessNode *current;
 	ProcessNode *tmp;
 
-	int childPid;
+	int childPid, result;
+	int status;
 
 	struct HEAD *head2 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head2);
 	struct HEAD *head3 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head3);
@@ -78,19 +79,23 @@ int main()
 
 	int stream[3];
 	char programName[MAX_NAME];
-	char *args[4];
+	char *args[5];
 
 	char pid[MAX_PID];
 	sprintf(pid, "%ld", (long)getpid());
 	args[0] = pid;
+	args[4] = NULL;
 
 	signal(SIGCHLD,RemoveChildProcess);
 
 	printf("Digite o comando 'exec <nomedoprograma> (n1,n2,n3)'\n");
-	while(scanf("exec %s (%d,%d,%d)", &programName, &stream[0], &stream[1], &stream[2]) == 4)
+	result = scanf("exec %s (%d,%d,%d)", &programName, &stream[0], &stream[1], &stream[2]);
+	while(result == 4)
 	{
 		//armazena os processos que o usuario quer rodar
 		AddToQueue(&head1,stream, programName);
+
+		result = scanf("exec %s (%d,%d,%d)", &programName, &stream[0], &stream[1], &stream[2]);
 	}
 
 	//inicializa processos
@@ -104,10 +109,12 @@ int main()
 		}
 		else
 		{
+			printf("executando\n");
 			sprintf(args[1], "%d", tmp->p.streams[0]);
 			sprintf(args[2], "%d", tmp->p.streams[1]);
 			sprintf(args[3], "%d", tmp->p.streams[2]);
 			execv(tmp->p.programName, args);
+			printf("erro no execv\n");
 		}
 	}
 
@@ -115,8 +122,12 @@ int main()
 	while(head1.tqh_first || head2->tqh_first || head3->tqh_first)
 	{
 		printf("escalonando\n");
+
+		kill(head1.tqh_first->p.pid, SIGCONT);
 		TAILQ_REMOVE(&head1, head1.tqh_first, nodes);
 	}
 
+	while(1){}
+	waitpid(-1, &status, 0);
 	return 0;
 }
