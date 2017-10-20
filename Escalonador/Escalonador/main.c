@@ -67,7 +67,7 @@ int main()
 	ProcessNode *current;
 	ProcessNode *tmp;
 
-	int childPid, result;
+	int childPid;
 	int status;
 
 	struct HEAD *head2 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head2);
@@ -89,13 +89,10 @@ int main()
 	signal(SIGCHLD,RemoveChildProcess);
 
 	printf("Digite o comando 'exec <nomedoprograma> (n1,n2,n3)'\n");
-	result = scanf("exec %s (%d,%d,%d)", &programName, &stream[0], &stream[1], &stream[2]);
-	while(result == 4)
+	while(scanf(" exec %s (%d,%d,%d)", &programName, &stream[0], &stream[1], &stream[2]) == 4)
 	{
 		//armazena os processos que o usuario quer rodar
 		AddToQueue(&head1,stream, programName);
-
-		result = scanf("exec %s (%d,%d,%d)", &programName, &stream[0], &stream[1], &stream[2]);
 	}
 
 	//inicializa processos
