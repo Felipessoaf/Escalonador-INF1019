@@ -24,6 +24,14 @@ typedef enum state
 	FINISHED
 } State;
 
+typedef enum schedulerState
+{
+	NONE,
+	QUEUE1,
+	QUEUE2,
+	QUEUE3
+} SchedulerState;
+
 typedef struct process Process;
 struct process
 {
@@ -46,16 +54,25 @@ TAILQ_HEAD(HEAD, node) head1 = TAILQ_HEAD_INITIALIZER(head1);
 ProcessNode *currentProcess;
 struct HEAD *currenthead;
 
-void RemoveChildProcess()
+void DeleteChildProcess()
 {
-	//TODO: checar vazamento de memoria
 	TAILQ_REMOVE(currenthead, currentProcess, nodes);
+
+	free(currentProcess);
+	currentProcess = NULL;
 }
 
 void ProcessEnteredIO()
 {
 	kill(currentProcess->p.pid, SIGSTOP);
 	currentProcess->p.state = WAITING;
+	currentProcess->p.timeInIO = 0;
+//	if(currenthead)
+//	{
+//
+//	}
+//	currentProcess->p.queue =
+	currentProcess = NULL;
 }
 
 void AddToQueue(struct HEAD *head, int stream[3], char *progName)
@@ -74,7 +91,7 @@ void AddToQueue(struct HEAD *head, int stream[3], char *progName)
 
 	strcpy(new->p.programName, progName);
 
-	TAILQ_INSERT_HEAD(head, new, nodes);
+	TAILQ_INSERT_TAIL(head, new, nodes);
 }
 
 void UpdateIO(struct HEAD *head)
@@ -94,9 +111,39 @@ void UpdateIO(struct HEAD *head)
 	}
 }
 
+int CheckReadyNew(struct HEAD *head)
+{
+	ProcessNode *tmp;
+	TAILQ_FOREACH(tmp, head, nodes)
+	{
+		if(tmp->p.state == NEW || tmp->p.state == READY)
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+struct HEAD * GetReadyNew(struct HEAD *head)
+{
+	ProcessNode *tmp;
+	TAILQ_FOREACH(tmp, head, nodes)
+	{
+		if(tmp->p.state == NEW || tmp->p.state == READY)
+		{
+			return tmp;
+		}
+	}
+
+	return NULL;
+}
+
 int main()
 {
 	ProcessNode *tmp;
+
+	SchedulerState schedulerState;
 
 	int childPid;
 	int status;
@@ -117,8 +164,9 @@ int main()
 
 	args[3] = NULL;
 	queue1CurrentQuantum = queue2CurrentQuantum = queue3CurrentQuantum = 0;
+	schedulerState = NONE;
 
-	signal(SIGCHLD,RemoveChildProcess);
+	signal(SIGCHLD,DeleteChildProcess);
 	signal(SIGUSR1,ProcessEnteredIO);
 
 	printf("Digite o comando 'exec <nomedoprograma> (n1,n2,n3)'\n");
@@ -152,46 +200,86 @@ int main()
 	while(1)
 	{
 		printf("escalonando\n");
-		if(head1.tqh_first)
+
+		if((CheckReadyNew(&head1) && schedulerState == NONE) || schedulerState == QUEUE1)
 		{
 			printf("fila 1\n");
-			kill(head1.tqh_first->p.pid, SIGCONT);
+
+			schedulerState = QUEUE1;
+			currenthead = &head1;
+
+			if(currentProcess == NULL)
+			{
+				currentProcess = GetReadyNew(currenthead);
+				currentProcess->p.state = RUNNING;
+				kill(currentProcess->p.pid, SIGCONT);
+			}
+
 			queue1CurrentQuantum += 1;
 			if(queue1CurrentQuantum == QUANTUM1)
 			{
 				//Acabou o quantum, desce o processo pra fila 2
+				TAILQ_REMOVE(currenthead, currentProcess, nodes);
+				TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
+				currentProcess->p.state = READY;
+				kill(currentProcess->p.pid, SIGSTOP);
+
 				queue1CurrentQuantum = 0;
+				schedulerState = NONE;
 			}
-			//sleep(QUANTUM1);
-			//UpdateIO(&head1);
 		}
-		else if(head2->tqh_first)
+		else if((CheckReadyNew(head2) && schedulerState == NONE) || schedulerState == QUEUE2)
 		{
 			printf("fila 2\n");
-			kill(head2->tqh_first->p.pid, SIGCONT);
+
+			schedulerState = QUEUE2;
+			currenthead = head2;
+
+			if(currentProcess == NULL)
+			{
+				currentProcess = GetReadyNew(currenthead);
+				currentProcess->p.state = RUNNING;
+				kill(currentProcess->p.pid, SIGCONT);
+			}
+
 			queue2CurrentQuantum += 1;
 			if(queue2CurrentQuantum == QUANTUM2)
 			{
 				//Acabou o quantum, desce o processo pra fila 3
+				TAILQ_REMOVE(currenthead, currentProcess, nodes);
+				TAILQ_INSERT_TAIL(head3, currentProcess, nodes);
+				currentProcess->p.state = READY;
+				kill(currentProcess->p.pid, SIGSTOP);
+
 				queue2CurrentQuantum = 0;
+				schedulerState = NONE;
 			}
-			//sleep(QUANTUM2);
-//			UpdateIO(head2);
 		}
-		else if(head3->tqh_first)
+		else if((CheckReadyNew(head3) && schedulerState == NONE) || schedulerState == QUEUE3)
 		{
 			printf("fila 3\n");
-			kill(head3->tqh_first->p.pid, SIGCONT);
+
+			schedulerState = QUEUE3;
+			currenthead = head3;
+
+			if(currentProcess == NULL)
+			{
+				currentProcess = GetReadyNew(currenthead);
+				currentProcess->p.state = RUNNING;
+				kill(currentProcess->p.pid, SIGCONT);
+			}
+
 			queue3CurrentQuantum += 1;
 			if(queue3CurrentQuantum == QUANTUM3)
 			{
 				//Acabou o quantum, processo permanece na fila
-				queue3CurrentQuantum = 0;
-			}
-			//sleep(QUANTUM3);
-//			UpdateIO(head3);
-		}
+				currentProcess->p.state = READY;
+				kill(currentProcess->p.pid, SIGSTOP);
 
+				queue3CurrentQuantum = 0;
+				schedulerState = NONE;
+			}
+		}
 
 		sleep(1);
 		UpdateIO(&head1);
