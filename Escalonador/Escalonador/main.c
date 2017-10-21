@@ -50,9 +50,12 @@ typedef struct node
 } ProcessNode;
 
 TAILQ_HEAD(HEAD, node) head1 = TAILQ_HEAD_INITIALIZER(head1);
+struct HEAD *head2;
+struct HEAD *head3;
 
 ProcessNode *currentProcess;
 struct HEAD *currenthead;
+SchedulerState schedulerState;
 
 void DeleteChildProcess()
 {
@@ -67,11 +70,14 @@ void ProcessEnteredIO()
 	kill(currentProcess->p.pid, SIGSTOP);
 	currentProcess->p.state = WAITING;
 	currentProcess->p.timeInIO = 0;
-//	if(currenthead)
-//	{
-//
-//	}
-//	currentProcess->p.queue =
+	if(schedulerState == QUEUE2)
+	{
+		currentProcess->p.queue = head1;
+	}
+	else if(schedulerState == QUEUE3)
+	{
+		currentProcess->p.queue = head2;
+	}
 	currentProcess = NULL;
 }
 
@@ -143,8 +149,6 @@ int main()
 {
 	ProcessNode *tmp;
 
-	SchedulerState schedulerState;
-
 	int childPid;
 	int status;
 
@@ -155,8 +159,8 @@ int main()
 	char *args[4];
 
 	currenthead = &head1;
-	struct HEAD *head2 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head2);
-	struct HEAD *head3 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head3);
+	head2 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head2);
+	head3 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head3);
 
 	TAILQ_INIT(&head1);
 	TAILQ_INIT(head2);
@@ -222,6 +226,7 @@ int main()
 				TAILQ_REMOVE(currenthead, currentProcess, nodes);
 				TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
 				currentProcess->p.state = READY;
+				currentProcess->p.queue = head2;
 				kill(currentProcess->p.pid, SIGSTOP);
 
 				queue1CurrentQuantum = 0;
@@ -249,6 +254,7 @@ int main()
 				TAILQ_REMOVE(currenthead, currentProcess, nodes);
 				TAILQ_INSERT_TAIL(head3, currentProcess, nodes);
 				currentProcess->p.state = READY;
+				currentProcess->p.queue = head3;
 				kill(currentProcess->p.pid, SIGSTOP);
 
 				queue2CurrentQuantum = 0;
