@@ -72,11 +72,17 @@ void ProcessEnteredIO()
 	currentProcess->p.timeInIO = 0;
 	if(schedulerState == QUEUE2)
 	{
-		currentProcess->p.queue = head1;
+		currentProcess->p.queue = &head1;
+
+		TAILQ_REMOVE(currenthead, currentProcess, nodes);
+		TAILQ_INSERT_TAIL(&head1, currentProcess, nodes);
 	}
 	else if(schedulerState == QUEUE3)
 	{
 		currentProcess->p.queue = head2;
+
+		TAILQ_REMOVE(currenthead, currentProcess, nodes);
+		TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
 	}
 	currentProcess = NULL;
 }
@@ -131,7 +137,7 @@ int CheckReadyNew(struct HEAD *head)
 	return 0;
 }
 
-struct HEAD * GetReadyNew(struct HEAD *head)
+ProcessNode * GetReadyNew(struct HEAD *head)
 {
 	ProcessNode *tmp;
 	TAILQ_FOREACH(tmp, head, nodes)
