@@ -14,6 +14,7 @@
 #define QUANTUM1 1
 #define QUANTUM2 2
 #define QUANTUM3 4
+//#define ECLIPSE
 
 typedef enum state
 {
@@ -59,10 +60,10 @@ SchedulerState schedulerState;
 
 void DeleteChildProcess()
 {
-	TAILQ_REMOVE(currenthead, currentProcess, nodes);
-
-	free(currentProcess);
-	currentProcess = NULL;
+//	TAILQ_REMOVE(currenthead, currentProcess, nodes);
+//
+//	free(currentProcess);
+//	currentProcess = NULL;
 }
 
 void ProcessEnteredIO()
@@ -155,6 +156,8 @@ int main()
 {
 	ProcessNode *tmp;
 
+	char name[50] = "";
+
 	int childPid;
 	int status;
 
@@ -162,7 +165,9 @@ int main()
 
 	int stream[3];
 	char programName[MAX_NAME];
-	char *args[4];
+	char arg1[20];
+	char arg2[20];
+	char arg3[20];
 
 	currenthead = &head1;
 	head2 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head2);
@@ -172,7 +177,6 @@ int main()
 	TAILQ_INIT(head2);
 	TAILQ_INIT(head3);
 
-	args[3] = NULL;
 	queue1CurrentQuantum = queue2CurrentQuantum = queue3CurrentQuantum = 0;
 	schedulerState = NONE;
 
@@ -192,17 +196,25 @@ int main()
 		childPid = fork();
 		if(childPid != 0)
 		{
-			kill(childPid, SIGSTOP);
+			//kill(childPid, SIGSTOP);
 			tmp->p.pid = childPid;
 		}
 		else
 		{
 			printf("executando\n");
-			sprintf(args[0], "%d", tmp->p.streams[0]);
-			sprintf(args[1], "%d", tmp->p.streams[1]);
-			sprintf(args[2], "%d", tmp->p.streams[2]);
-			execv(tmp->p.programName, args);
-			printf("erro no execv\n");
+			sprintf(arg1, "%d", tmp->p.streams[0]);
+			sprintf(arg2, "%d", tmp->p.streams[1]);
+			sprintf(arg3, "%d", tmp->p.streams[2]);
+			strcat(name, tmp->p.programName);
+			printf("%s\n",name);
+#ifdef ECLIPSE
+			if(execl("/home/felipessoaf/prog1", tmp->p.programName, arg1, arg2, arg3, (char*)NULL) == -1)
+#else
+			if(execl(tmp->p.programName, tmp->p.programName, arg1, arg2, arg3, (char*)NULL) == -1)
+#endif
+			{
+				printf("erro: execv\n");
+			}
 		}
 	}
 
@@ -233,7 +245,7 @@ int main()
 				TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
 				currentProcess->p.state = READY;
 				currentProcess->p.queue = head2;
-				kill(currentProcess->p.pid, SIGSTOP);
+				//kill(currentProcess->p.pid, SIGSTOP);
 
 				queue1CurrentQuantum = 0;
 				schedulerState = NONE;
@@ -261,7 +273,7 @@ int main()
 				TAILQ_INSERT_TAIL(head3, currentProcess, nodes);
 				currentProcess->p.state = READY;
 				currentProcess->p.queue = head3;
-				kill(currentProcess->p.pid, SIGSTOP);
+				//kill(currentProcess->p.pid, SIGSTOP);
 
 				queue2CurrentQuantum = 0;
 				schedulerState = NONE;
@@ -286,7 +298,7 @@ int main()
 			{
 				//Acabou o quantum, processo permanece na fila
 				currentProcess->p.state = READY;
-				kill(currentProcess->p.pid, SIGSTOP);
+				//kill(currentProcess->p.pid, SIGSTOP);
 
 				queue3CurrentQuantum = 0;
 				schedulerState = NONE;

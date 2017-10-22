@@ -11,25 +11,26 @@
 int main(int argc, char *argv[])
 {
 	int i,j,k;
-	for (i = 0; i < strtol(argv[0], NULL, 10); i++)
+	printf("prog1!!!!!!!!!!!!!!!!\n");
+	for (i = 0; i < strtol(argv[1], NULL, 10); i++)
 	{
 		printf("prog1-1: %d\n", getpid());
 		sleep(1);
 	}
 
 	//avisa IO
-	kill(getppid(), SIGUSR1);
+//	kill(getppid(), SIGUSR1);
 
-	for (j = 0; j < strtol(argv[1], NULL, 10); j++)
+	for (j = 0; j < strtol(argv[2], NULL, 10); j++)
 	{
 		printf("prog1-2: %d\n", getpid());
 		sleep(1);
 	}
 
 	//avisa IO
-	kill(getppid(), SIGUSR1);
+//	kill(getppid(), SIGUSR1);
 
-	for (k = 0; k < strtol(argv[2], NULL, 10); k++)
+	for (k = 0; k < strtol(argv[3], NULL, 10); k++)
 	{
 		printf("prog1-3: %d\n", getpid());
 		sleep(1);
