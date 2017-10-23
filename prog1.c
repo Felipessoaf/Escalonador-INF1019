@@ -11,6 +11,7 @@
 int main(int argc, char *argv[])
 {
 	int i,j,k;
+	kill(getpid(), SIGSTOP);
 	for (i = 0; i < strtol(argv[1], NULL, 10); i++)
 	{
 		printf("prog1-1: %d\n", getpid());
