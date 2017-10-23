@@ -208,12 +208,12 @@ int main()
 			strcat(name, tmp->p.programName);
 			printf("%s\n",name);
 #ifdef ECLIPSE
-			if(execl("/home/felipessoaf/prog1", tmp->p.programName, arg1, arg2, arg3, (char*)NULL) == -1)
+			if(execl("/home/felipessoaf/Desktop/EscalonadorRepo", tmp->p.programName, arg1, arg2, arg3, (char*)NULL) == -1)
 #else
 			if(execl(tmp->p.programName, tmp->p.programName, arg1, arg2, arg3, (char*)NULL) == -1)
 #endif
 			{
-				printf("erro: execv\n");
+				printf("erro: exec\n");
 			}
 		}
 	}
