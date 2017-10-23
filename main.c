@@ -223,6 +223,8 @@ int main()
 		}
 	}
 
+	sleep(1);
+
 	//começa o escalonador
 	while(1)
 	{
@@ -236,6 +238,7 @@ int main()
 				currentProcess->p.state = READY;
 				currentProcess->p.queue = head2;
 				kill(currentProcess->p.pid, SIGSTOP);
+				currentProcess = NULL;
 
 				queue1CurrentQuantum = 0;
 				schedulerState = NONE;
@@ -254,6 +257,8 @@ int main()
 					currentProcess = GetReadyNew(currenthead);
 					currentProcess->p.state = RUNNING;
 				}
+
+//				printf("will wake child\n");
 				kill(currentProcess->p.pid, SIGCONT);
 
 				queue1CurrentQuantum += 1;
@@ -271,6 +276,7 @@ int main()
 				currentProcess->p.state = READY;
 				currentProcess->p.queue = head3;
 				kill(currentProcess->p.pid, SIGSTOP);
+				currentProcess = NULL;
 
 				queue2CurrentQuantum = 0;
 				schedulerState = NONE;
@@ -303,6 +309,7 @@ int main()
 				//Acabou o quantum, processo permanece na fila
 				currentProcess->p.state = READY;
 				kill(currentProcess->p.pid, SIGSTOP);
+				currentProcess = NULL;
 
 				queue3CurrentQuantum = 0;
 				schedulerState = NONE;
@@ -331,7 +338,9 @@ int main()
 
 		if(shouldSleep)
 		{
+//			printf("will sleep\n");
 			sleep(1);
+//			printf("slept\n");
 			UpdateIO(&head1);
 			UpdateIO(head2);
 			UpdateIO(head3);
