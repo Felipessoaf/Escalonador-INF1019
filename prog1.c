@@ -27,26 +27,30 @@ int main(int argc, char *argv[])
 	}
 
 	//avisa IO
+//	printf("will enter IO\n");
 	kill(getppid(), SIGUSR1);
+	kill(getpid(), SIGSTOP);
 
 	for (j = 0; j < strtol(argv[2], NULL, 10); j++)
 	{
 		printf("prog1-2: %d\n", getpid());
 //		sleep(1);
-//		if(j < strtol(argv[1], NULL, 10) - 1)
+//		if(j < strtol(argv[2], NULL, 10) - 1)
 //		{
 			kill(getpid(), SIGSTOP);
 //		}
 	}
 
 	//avisa IO
+//	printf("will enter IO\n");
 	kill(getppid(), SIGUSR1);
+	kill(getpid(), SIGSTOP);
 
 	for (k = 0; k < strtol(argv[3], NULL, 10); k++)
 	{
 		printf("prog1-3: %d\n", getpid());
 //		sleep(1);
-//		if(k < strtol(argv[1], NULL, 10) - 1)
+//		if(k < strtol(argv[3], NULL, 10) - 1)
 //		{
 			kill(getpid(), SIGSTOP);
 //		}

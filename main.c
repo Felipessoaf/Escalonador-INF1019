@@ -42,7 +42,7 @@ struct process
 	State state;
 	int streams[3];
 	int timeInIO;
-//	int aboutToTerminate;
+	int justChangedQueue;
 	struct HEAD *queue;
 };
 
@@ -93,23 +93,26 @@ void ProcessEnteredIO()
 	if(currentProcess)
 	{
 	//	signal(SIGCHLD,SIG_IGN);
-		kill(currentProcess->p.pid, SIGSTOP);
+//		kill(currentProcess->p.pid, SIGSTOP);
 	//	signal(SIGCHLD,DeleteChildProcess);
 		currentProcess->p.state = WAITING;
 		currentProcess->p.timeInIO = 0;
-		if(schedulerState == QUEUE2)
+		if(!currentProcess->p.justChangedQueue)
 		{
-			currentProcess->p.queue = &head1;
+			if(schedulerState == QUEUE2)
+			{
+				currentProcess->p.queue = &head1;
 
-			TAILQ_REMOVE(currenthead, currentProcess, nodes);
-			TAILQ_INSERT_TAIL(&head1, currentProcess, nodes);
-		}
-		else if(schedulerState == QUEUE3)
-		{
-			currentProcess->p.queue = head2;
+				TAILQ_REMOVE(currenthead, currentProcess, nodes);
+				TAILQ_INSERT_TAIL(&head1, currentProcess, nodes);
+			}
+			else if(schedulerState == QUEUE3)
+			{
+				currentProcess->p.queue = head2;
 
-			TAILQ_REMOVE(currenthead, currentProcess, nodes);
-			TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
+				TAILQ_REMOVE(currenthead, currentProcess, nodes);
+				TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
+			}
 		}
 	}
 	currentProcess = NULL;
@@ -123,6 +126,7 @@ void AddToQueue(struct HEAD *head, int stream[3], char *progName)
 	new->p.state = NEW;
 	new->p.timeInIO = 0;
 //	new->p.aboutToTerminate = 0;
+	new->p.justChangedQueue = 0;
 
 	for(i = 0; i < 3; i++)
 	{
@@ -150,11 +154,6 @@ void UpdateIO(struct HEAD *head)
 			}
 		}
 	}
-}
-
-int CheckUpdatingIO()
-{
-	return !CheckReadyNew(&head1) && !CheckReadyNew(head2) && !CheckReadyNew(head3) && (CheckWaiting(&head1) || CheckWaiting(head2) || CheckWaiting(head3));
 }
 
 int CheckReadyNew(struct HEAD *head)
@@ -185,6 +184,11 @@ int CheckWaiting(struct HEAD *head)
 	return 0;
 }
 
+int CheckUpdatingIO()
+{
+	return !CheckReadyNew(&head1) && !CheckReadyNew(head2) && !CheckReadyNew(head3) && (CheckWaiting(&head1) || CheckWaiting(head2) || CheckWaiting(head3));
+}
+
 ProcessNode * GetReadyNew(struct HEAD *head)
 {
 	ProcessNode *tmp;
@@ -204,7 +208,6 @@ int main()
 	ProcessNode *tmp;
 
 	int childPid;
-	int status;
 
 	int shouldSleep;
 
@@ -281,6 +284,7 @@ int main()
 		{
 			if(queue1CurrentQuantum == QUANTUM1)
 			{
+//				printf("end fila 1\n");
 				if(currentProcess)
 				{
 					//Acabou o quantum, desce o processo pra fila 2
@@ -288,6 +292,7 @@ int main()
 					TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
 					currentProcess->p.state = READY;
 					currentProcess->p.queue = head2;
+					currentProcess->p.justChangedQueue = 1;
 	//				signal(SIGCHLD,SIG_IGN);
 					kill(currentProcess->p.pid, SIGSTOP);
 				}
@@ -310,6 +315,10 @@ int main()
 				{
 					currentProcess = GetReadyNew(currenthead);
 				}
+				else
+				{
+					currentProcess->p.justChangedQueue = 0;
+				}
 
 //				printf("will wake child\n");
 
@@ -328,6 +337,7 @@ int main()
 		{
 			if(queue2CurrentQuantum == QUANTUM2)
 			{
+//				printf("end fila 2\n");
 				if(currentProcess)
 				{
 					//Acabou o quantum, desce o processo pra fila 3
@@ -335,6 +345,7 @@ int main()
 					TAILQ_INSERT_TAIL(head3, currentProcess, nodes);
 					currentProcess->p.state = READY;
 					currentProcess->p.queue = head3;
+					currentProcess->p.justChangedQueue = 1;
 	//				signal(SIGCHLD,SIG_IGN);
 					kill(currentProcess->p.pid, SIGSTOP);
 				}
@@ -357,6 +368,10 @@ int main()
 				{
 					currentProcess = GetReadyNew(currenthead);
 				}
+				else
+				{
+					currentProcess->p.justChangedQueue = 0;
+				}
 
 				if(currentProcess)
 				{
@@ -371,12 +386,14 @@ int main()
 		}
 		else if((CheckReadyNew(head3) && schedulerState == NONE) || schedulerState == QUEUE3)
 		{
+//			printf("end fila 3	\n");
 			if(queue3CurrentQuantum == QUANTUM3)
 			{
 				//Acabou o quantum, processo permanece na fila
 				if(currentProcess)
 				{
 					currentProcess->p.state = READY;
+					currentProcess->p.justChangedQueue = 1;
 	//				signal(SIGCHLD,SIG_IGN);
 					kill(currentProcess->p.pid, SIGSTOP);
 				}
@@ -399,6 +416,11 @@ int main()
 				{
 					currentProcess = GetReadyNew(currenthead);
 				}
+				else
+				{
+					currentProcess->p.justChangedQueue = 0;
+				}
+
 				if(currentProcess)
 				{
 					currentProcess->p.state = RUNNING;
@@ -417,9 +439,7 @@ int main()
 		}
 		if(shouldSleep)
 		{
-//			printf("will sleep\n");
 			sleep(1);
-//			printf("slept\n");
 			UpdateIO(&head1);
 			UpdateIO(head2);
 			UpdateIO(head3);
