@@ -42,6 +42,7 @@ struct process
 	State state;
 	int streams[3];
 	int timeInIO;
+	int aboutToTerminate;
 	struct HEAD *queue;
 };
 
@@ -69,15 +70,29 @@ void DeleteChildProcess()
 //	errno = saved_errno;
 //	printf("SaiuDelete\n");
 
-//	TAILQ_REMOVE(currenthead, currentProcess, nodes);
-//
-//	free(currentProcess);
-//	currentProcess = NULL;
+	if(currentProcess != NULL)
+	{
+//		if(currentProcess->p.aboutToTerminate)
+//		{
+			TAILQ_REMOVE(currenthead, currentProcess, nodes);
+
+			free(currentProcess);
+			currentProcess = NULL;
+			schedulerState = NONE;
+//		}
+	}
+}
+
+void AboutToTerminate()
+{
+	currentProcess->p.aboutToTerminate = 1;
 }
 
 void ProcessEnteredIO()
 {
+//	signal(SIGCHLD,SIG_IGN);
 	kill(currentProcess->p.pid, SIGSTOP);
+//	signal(SIGCHLD,DeleteChildProcess);
 	currentProcess->p.state = WAITING;
 	currentProcess->p.timeInIO = 0;
 	if(schedulerState == QUEUE2)
@@ -104,6 +119,7 @@ void AddToQueue(struct HEAD *head, int stream[3], char *progName)
 	new = (ProcessNode*) malloc(sizeof(ProcessNode));
 	new->p.state = NEW;
 	new->p.timeInIO = 0;
+	new->p.aboutToTerminate = 0;
 
 	for(i = 0; i < 3; i++)
 	{
@@ -189,8 +205,19 @@ int main()
 	queue1CurrentQuantum = queue2CurrentQuantum = queue3CurrentQuantum = 0;
 	schedulerState = NONE;
 
-	//signal(SIGCHLD,DeleteChildProcess);
+//	signal(SIGCHLD,DeleteChildProcess);
+//	signal(SIGCHLD,SIG_IGN);
+	struct sigaction sa;
+	sa.sa_handler = &DeleteChildProcess;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+	if (sigaction(SIGCHLD, &sa, 0) == -1) {
+	  perror(0);
+	  exit(1);
+	}
+
 	signal(SIGUSR1,ProcessEnteredIO);
+//	signal(SIGUSR2,AboutToTerminate);
 
 	printf("Digite o comando 'exec <nomedoprograma> (n1,n2,n3)'\n");
 	while(scanf(" exec %s (%d,%d,%d)", &programName, &stream[0], &stream[1], &stream[2]) == 4)
@@ -232,12 +259,17 @@ int main()
 		{
 			if(queue1CurrentQuantum == QUANTUM1)
 			{
-				//Acabou o quantum, desce o processo pra fila 2
-				TAILQ_REMOVE(currenthead, currentProcess, nodes);
-				TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
-				currentProcess->p.state = READY;
-				currentProcess->p.queue = head2;
-				kill(currentProcess->p.pid, SIGSTOP);
+				if(currentProcess)
+				{
+					//Acabou o quantum, desce o processo pra fila 2
+					TAILQ_REMOVE(currenthead, currentProcess, nodes);
+					TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
+					currentProcess->p.state = READY;
+					currentProcess->p.queue = head2;
+	//				signal(SIGCHLD,SIG_IGN);
+					kill(currentProcess->p.pid, SIGSTOP);
+				}
+//				signal(SIGCHLD,DeleteChildProcess);
 				currentProcess = NULL;
 
 				queue1CurrentQuantum = 0;
@@ -259,7 +291,11 @@ int main()
 				}
 
 //				printf("will wake child\n");
-				kill(currentProcess->p.pid, SIGCONT);
+
+				if(currentProcess)
+				{
+					kill(currentProcess->p.pid, SIGCONT);
+				}
 
 				queue1CurrentQuantum += 1;
 
@@ -270,12 +306,17 @@ int main()
 		{
 			if(queue2CurrentQuantum == QUANTUM2)
 			{
-				//Acabou o quantum, desce o processo pra fila 3
-				TAILQ_REMOVE(currenthead, currentProcess, nodes);
-				TAILQ_INSERT_TAIL(head3, currentProcess, nodes);
-				currentProcess->p.state = READY;
-				currentProcess->p.queue = head3;
-				kill(currentProcess->p.pid, SIGSTOP);
+				if(currentProcess)
+				{
+					//Acabou o quantum, desce o processo pra fila 3
+					TAILQ_REMOVE(currenthead, currentProcess, nodes);
+					TAILQ_INSERT_TAIL(head3, currentProcess, nodes);
+					currentProcess->p.state = READY;
+					currentProcess->p.queue = head3;
+	//				signal(SIGCHLD,SIG_IGN);
+					kill(currentProcess->p.pid, SIGSTOP);
+				}
+//				signal(SIGCHLD,DeleteChildProcess);
 				currentProcess = NULL;
 
 				queue2CurrentQuantum = 0;
@@ -295,7 +336,11 @@ int main()
 					currentProcess = GetReadyNew(currenthead);
 					currentProcess->p.state = RUNNING;
 				}
-				kill(currentProcess->p.pid, SIGCONT);
+
+				if(currentProcess)
+				{
+					kill(currentProcess->p.pid, SIGCONT);
+				}
 
 				queue2CurrentQuantum += 1;
 
@@ -307,8 +352,13 @@ int main()
 			if(queue3CurrentQuantum == QUANTUM3)
 			{
 				//Acabou o quantum, processo permanece na fila
-				currentProcess->p.state = READY;
-				kill(currentProcess->p.pid, SIGSTOP);
+				if(currentProcess)
+				{
+					currentProcess->p.state = READY;
+	//				signal(SIGCHLD,SIG_IGN);
+					kill(currentProcess->p.pid, SIGSTOP);
+				}
+//				signal(SIGCHLD,DeleteChildProcess);
 				currentProcess = NULL;
 
 				queue3CurrentQuantum = 0;
@@ -328,7 +378,10 @@ int main()
 					currentProcess = GetReadyNew(currenthead);
 					currentProcess->p.state = RUNNING;
 				}
-				kill(currentProcess->p.pid, SIGCONT);
+				if(currentProcess)
+				{
+					kill(currentProcess->p.pid, SIGCONT);
+				}
 
 				queue3CurrentQuantum += 1;
 
@@ -348,6 +401,7 @@ int main()
 
 		if(head1.tqh_first == NULL && head2->tqh_first == NULL && head3->tqh_first == NULL)
 		{
+			printf("ACABOU\n");
 			return 0;
 		}
 	}
