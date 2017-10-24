@@ -42,7 +42,7 @@ struct process
 	State state;
 	int streams[3];
 	int timeInIO;
-	int aboutToTerminate;
+//	int aboutToTerminate;
 	struct HEAD *queue;
 };
 
@@ -83,31 +83,34 @@ void DeleteChildProcess()
 	}
 }
 
-void AboutToTerminate()
-{
-	currentProcess->p.aboutToTerminate = 1;
-}
+//void AboutToTerminate()
+//{
+//	currentProcess->p.aboutToTerminate = 1;
+//}
 
 void ProcessEnteredIO()
 {
-//	signal(SIGCHLD,SIG_IGN);
-	kill(currentProcess->p.pid, SIGSTOP);
-//	signal(SIGCHLD,DeleteChildProcess);
-	currentProcess->p.state = WAITING;
-	currentProcess->p.timeInIO = 0;
-	if(schedulerState == QUEUE2)
+	if(currentProcess)
 	{
-		currentProcess->p.queue = &head1;
+	//	signal(SIGCHLD,SIG_IGN);
+		kill(currentProcess->p.pid, SIGSTOP);
+	//	signal(SIGCHLD,DeleteChildProcess);
+		currentProcess->p.state = WAITING;
+		currentProcess->p.timeInIO = 0;
+		if(schedulerState == QUEUE2)
+		{
+			currentProcess->p.queue = &head1;
 
-		TAILQ_REMOVE(currenthead, currentProcess, nodes);
-		TAILQ_INSERT_TAIL(&head1, currentProcess, nodes);
-	}
-	else if(schedulerState == QUEUE3)
-	{
-		currentProcess->p.queue = head2;
+			TAILQ_REMOVE(currenthead, currentProcess, nodes);
+			TAILQ_INSERT_TAIL(&head1, currentProcess, nodes);
+		}
+		else if(schedulerState == QUEUE3)
+		{
+			currentProcess->p.queue = head2;
 
-		TAILQ_REMOVE(currenthead, currentProcess, nodes);
-		TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
+			TAILQ_REMOVE(currenthead, currentProcess, nodes);
+			TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
+		}
 	}
 	currentProcess = NULL;
 }
@@ -119,7 +122,7 @@ void AddToQueue(struct HEAD *head, int stream[3], char *progName)
 	new = (ProcessNode*) malloc(sizeof(ProcessNode));
 	new->p.state = NEW;
 	new->p.timeInIO = 0;
-	new->p.aboutToTerminate = 0;
+//	new->p.aboutToTerminate = 0;
 
 	for(i = 0; i < 3; i++)
 	{
@@ -149,12 +152,31 @@ void UpdateIO(struct HEAD *head)
 	}
 }
 
+int CheckUpdatingIO()
+{
+	return !CheckReadyNew(&head1) && !CheckReadyNew(head2) && !CheckReadyNew(head3) && (CheckWaiting(&head1) || CheckWaiting(head2) || CheckWaiting(head3));
+}
+
 int CheckReadyNew(struct HEAD *head)
 {
 	ProcessNode *tmp;
 	TAILQ_FOREACH(tmp, head, nodes)
 	{
 		if(tmp->p.state == NEW || tmp->p.state == READY)
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int CheckWaiting(struct HEAD *head)
+{
+	ProcessNode *tmp;
+	TAILQ_FOREACH(tmp, head, nodes)
+	{
+		if(tmp->p.state == WAITING)
 		{
 			return 1;
 		}
@@ -287,13 +309,13 @@ int main()
 				if(currentProcess == NULL)
 				{
 					currentProcess = GetReadyNew(currenthead);
-					currentProcess->p.state = RUNNING;
 				}
 
 //				printf("will wake child\n");
 
 				if(currentProcess)
 				{
+					currentProcess->p.state = RUNNING;
 					kill(currentProcess->p.pid, SIGCONT);
 				}
 
@@ -334,11 +356,11 @@ int main()
 				if(currentProcess == NULL)
 				{
 					currentProcess = GetReadyNew(currenthead);
-					currentProcess->p.state = RUNNING;
 				}
 
 				if(currentProcess)
 				{
+					currentProcess->p.state = RUNNING;
 					kill(currentProcess->p.pid, SIGCONT);
 				}
 
@@ -376,10 +398,10 @@ int main()
 				if(currentProcess == NULL)
 				{
 					currentProcess = GetReadyNew(currenthead);
-					currentProcess->p.state = RUNNING;
 				}
 				if(currentProcess)
 				{
+					currentProcess->p.state = RUNNING;
 					kill(currentProcess->p.pid, SIGCONT);
 				}
 
@@ -389,6 +411,10 @@ int main()
 			}
 		}
 
+		if(CheckUpdatingIO())
+		{
+			shouldSleep = 1;
+		}
 		if(shouldSleep)
 		{
 //			printf("will sleep\n");

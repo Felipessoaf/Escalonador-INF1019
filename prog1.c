@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	}
 
 	//avisa IO
-//	kill(getppid(), SIGUSR1);
+	kill(getppid(), SIGUSR1);
 
 	for (j = 0; j < strtol(argv[2], NULL, 10); j++)
 	{
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	}
 
 	//avisa IO
-//	kill(getppid(), SIGUSR1);
+	kill(getppid(), SIGUSR1);
 
 	for (k = 0; k < strtol(argv[3], NULL, 10); k++)
 	{
