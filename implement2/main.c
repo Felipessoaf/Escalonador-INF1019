@@ -191,44 +191,18 @@ ProcessNode * GetReadyNew(struct HEAD *head)
 	return NULL;
 }
 
-int main()
+void interpreter()
 {
-	ProcessNode *tmp;
-
 	int childPid;
 
-	int shouldSleep;
-	int newQueuePrint = 0;
-
-	int queue1CurrentQuantum, queue2CurrentQuantum, queue3CurrentQuantum;
+	ProcessNode *tmp;
 
 	int stream[3];
+
 	char programName[MAX_NAME];
 	char arg1[20];
 	char arg2[20];
 	char arg3[20];
-
-	currenthead = &head1;
-	head2 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head2);
-	head3 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head3);
-
-	TAILQ_INIT(&head1);
-	TAILQ_INIT(head2);
-	TAILQ_INIT(head3);
-
-	queue1CurrentQuantum = queue2CurrentQuantum = queue3CurrentQuantum = 0;
-	schedulerState = NONE;
-
-	struct sigaction sa;
-	sa.sa_handler = &DeleteChildProcess;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-	if (sigaction(SIGCHLD, &sa, 0) == -1) {
-	  perror(0);
-	  exit(1);
-	}
-
-	signal(SIGUSR1,ProcessEnteredIO);
 
 	printf("Digite o comando 'exec <nomedoprograma> (n1,n2,n3)'\n");
 	while(scanf(" exec %s (%d,%d,%d)", &programName, &stream[0], &stream[1], &stream[2]) == 4)
@@ -253,21 +227,114 @@ int main()
 #ifdef ECLIPSE
 			if(execl("/home/felipessoaf/Desktop/EscalonadorRepo/implement2/prog1", tmp->p.programName, arg1, arg2, arg3, (char*)NULL) == -1)
 #else
-			if(execl(tmp->p.programName, tmp->p.programName, arg1, arg2, arg3, (char*)NULL) == -1)
+				if(execl(tmp->p.programName, tmp->p.programName, arg1, arg2, arg3, (char*)NULL) == -1)
 #endif
-			{
-				printf("erro: exec\n");
-			}
+				{
+					printf("erro: exec\n");
+				}
 		}
 	}
+}
 
-	sleep(1);
+void schedulerAux(int *currentQuantum, int *shouldSleep, int quantumMax)
+{
+	int newQueuePrint = 0;
 
-	//começa o escalonador
+	if(schedulerState == NONE)
+	{
+		*currentQuantum = 0;
+	}
+	if(*currentQuantum == quantumMax)
+	{
+		if(currentProcess)
+		{
+			//Acabou o quantum, desce o processo pra fila 2
+			TAILQ_REMOVE(currenthead, currentProcess, nodes);
+			TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
+			currentProcess->p.state = READY;
+			currentProcess->p.queue = head2;
+			currentProcess->p.justChangedQueue = 1;
+		}
+		currentProcess = NULL;
+
+		*currentQuantum = 0;
+		schedulerState = NONE;
+
+		shouldSleep = 0;
+	}
+	else
+	{
+		schedulerState = QUEUE1;
+		currenthead = &head1;
+
+		if(currentProcess == NULL)
+		{
+			currentProcess = GetReadyNew(currenthead);
+			newQueuePrint = 1;
+		}
+		else
+		{
+			currentProcess->p.justChangedQueue = 0;
+		}
+
+		if(currentProcess)
+		{
+			if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
+			{
+				currentProcess->p.currentStream += 1;
+				kill(currentProcess->p.pid, SIGCONT);
+				sleep(1);
+				shouldSleep = 0;
+				continue;
+			}
+		}
+		else
+		{
+			continue;
+		}
+
+		if(currentProcess && newQueuePrint)
+		{
+			if(currentProcess->p.state == NEW || currentProcess->p.wasInIO)
+			{
+				currentProcess->p.wasInIO = 0;
+				printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
+						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+				kill(currentProcess->p.pid, SIGCONT);
+			}
+			else
+			{
+				printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
+						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+			}
+			newQueuePrint = 0;
+			currentProcess->p.state = RUNNING;
+		}
+
+		*currentQuantum += 1;
+		if(currentProcess)
+		{
+			currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
+		}
+
+		shouldSleep = 1;
+	}
+}
+
+void scheduler()
+{
+	int shouldSleep;
+	int newQueuePrint = 0;
+
+	int queue1CurrentQuantum, queue2CurrentQuantum, queue3CurrentQuantum;
+
+	queue1CurrentQuantum = queue2CurrentQuantum = queue3CurrentQuantum = 0;
+
 	while(1)
 	{
 		if((CheckReadyNew(&head1) && schedulerState == NONE) || schedulerState == QUEUE1)
 		{
+			//schedulerAux(&queue1CurrentQuantum, &shouldSleep, QUANTUM1);
 			if(schedulerState == NONE)
 			{
 				queue1CurrentQuantum = 0;
@@ -524,9 +591,41 @@ int main()
 		if(head1.tqh_first == NULL && head2->tqh_first == NULL && head3->tqh_first == NULL)
 		{
 			printf("ACABOU\n");
-			return 0;
+			return;
 		}
 	}
+}
+
+int main()
+{
+	currenthead = &head1;
+	head2 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head2);
+	head3 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head3);
+
+	TAILQ_INIT(&head1);
+	TAILQ_INIT(head2);
+	TAILQ_INIT(head3);
+
+	schedulerState = NONE;
+
+	struct sigaction sa;
+	sa.sa_handler = &DeleteChildProcess;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+	if (sigaction(SIGCHLD, &sa, 0) == -1) {
+	  perror(0);
+	  exit(1);
+	}
+
+	signal(SIGUSR1,ProcessEnteredIO);
+
+	//chama o interpretador
+	interpreter();
+
+	sleep(1);
+
+	//começa o escalonador
+	scheduler();
 
 	return 0;
 }
