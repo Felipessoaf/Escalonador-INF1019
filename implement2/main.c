@@ -236,90 +236,115 @@ void interpreter()
 	}
 }
 
-//void schedulerAux(int *currentQuantum, int *shouldSleep, int quantumMax)
-//{
-//	int newQueuePrint = 0;
-//
-//	if(schedulerState == NONE)
-//	{
-//		*currentQuantum = 0;
-//	}
-//	if(*currentQuantum == quantumMax)
-//	{
-//		if(currentProcess)
-//		{
-//			//Acabou o quantum, desce o processo pra fila 2
-//			TAILQ_REMOVE(currenthead, currentProcess, nodes);
-//			TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
-//			currentProcess->p.state = READY;
-//			currentProcess->p.queue = head2;
-//			currentProcess->p.justChangedQueue = 1;
-//		}
-//		currentProcess = NULL;
-//
-//		*currentQuantum = 0;
-//		schedulerState = NONE;
-//
-//		shouldSleep = 0;
-//	}
-//	else
-//	{
-//		schedulerState = QUEUE1;
-//		currenthead = &head1;
-//
-//		if(currentProcess == NULL)
-//		{
-//			currentProcess = GetReadyNew(currenthead);
-//			newQueuePrint = 1;
-//		}
-//		else
-//		{
-//			currentProcess->p.justChangedQueue = 0;
-//		}
-//
-//		if(currentProcess)
-//		{
-//			if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
-//			{
-//				currentProcess->p.currentStream += 1;
-//				kill(currentProcess->p.pid, SIGCONT);
-//				sleep(1);
-//				shouldSleep = 0;
-//				continue;
-//			}
-//		}
-//		else
-//		{
-//			continue;
-//		}
-//
-//		if(currentProcess && newQueuePrint)
-//		{
-//			if(currentProcess->p.state == NEW || currentProcess->p.wasInIO)
-//			{
-//				currentProcess->p.wasInIO = 0;
-//				printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-//						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-//				kill(currentProcess->p.pid, SIGCONT);
-//			}
-//			else
-//			{
-//				printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-//						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-//			}
-//			newQueuePrint = 0;
-//			currentProcess->p.state = RUNNING;
-//		}
-//
-//		*currentQuantum += 1;
-//		if(currentProcess)
-//		{
-//			currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
-//		}
-//
-//		shouldSleep = 1;
-//	}
-//}
+int schedulerAux(int *currentQuantum, int *shouldSleep, int quantumMax, int queue)
+{
+	int newQueuePrint = 0;
+
+	if(schedulerState == NONE)
+	{
+		*currentQuantum = 0;
+	}
+	if(*currentQuantum == quantumMax)
+	{
+		if(currentProcess)
+		{
+			if(queue == 1)
+			{
+				//Acabou o quantum, desce o processo pra fila 2
+				TAILQ_REMOVE(currenthead, currentProcess, nodes);
+				TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
+				currentProcess->p.queue = head2;
+				currentProcess->p.justChangedQueue = 1;
+			}
+			else if(queue == 2)
+			{
+				//Acabou o quantum, desce o processo pra fila 3
+				TAILQ_REMOVE(currenthead, currentProcess, nodes);
+				TAILQ_INSERT_TAIL(head3, currentProcess, nodes);
+				currentProcess->p.queue = head3;
+				currentProcess->p.justChangedQueue = 1;
+			}
+			currentProcess->p.state = READY;
+		}
+		currentProcess = NULL;
+
+		*currentQuantum = 0;
+		schedulerState = NONE;
+
+		*shouldSleep = 0;
+	}
+	else
+	{
+		if(queue == 1)
+		{
+			schedulerState = QUEUE1;
+			currenthead = &head1;
+		}
+		else if(queue == 2)
+		{
+			schedulerState = QUEUE2;
+			currenthead = head2;
+		}
+		else if(queue == 3)
+		{
+			schedulerState = QUEUE3;
+			currenthead = head3;
+		}
+
+		if(currentProcess == NULL)
+		{
+			currentProcess = GetReadyNew(currenthead);
+			newQueuePrint = 1;
+		}
+		else
+		{
+			currentProcess->p.justChangedQueue = 0;
+		}
+
+		if(currentProcess)
+		{
+			if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
+			{
+				currentProcess->p.currentStream += 1;
+				kill(currentProcess->p.pid, SIGCONT);
+				sleep(1);
+				*shouldSleep = 0;
+				return 0;
+			}
+		}
+		else
+		{
+			return 0;
+		}
+
+		if(currentProcess && newQueuePrint)
+		{
+			if(currentProcess->p.state == NEW || currentProcess->p.wasInIO)
+			{
+				currentProcess->p.wasInIO = 0;
+				printf("Fila %d\nProcesso: %s | Rajada: %d | Tempo restante: %d\n", queue,currentProcess->p.programName,
+						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+				kill(currentProcess->p.pid, SIGCONT);
+			}
+			else
+			{
+				printf("Fila %d\nProcesso: %s | Rajada: %d | Tempo restante: %d\n", queue,currentProcess->p.programName,
+						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+			}
+			newQueuePrint = 0;
+			currentProcess->p.state = RUNNING;
+		}
+
+		*currentQuantum += 1;
+		if(currentProcess)
+		{
+			currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
+		}
+
+		*shouldSleep = 1;
+	}
+	return 1;
+}
 
 void scheduler()
 {
@@ -334,245 +359,23 @@ void scheduler()
 	{
 		if((CheckReadyNew(&head1) && schedulerState == NONE) || schedulerState == QUEUE1)
 		{
-			//schedulerAux(&queue1CurrentQuantum, &shouldSleep, QUANTUM1);
-			if(schedulerState == NONE)
+			if(!schedulerAux(&queue1CurrentQuantum, &shouldSleep, QUANTUM1, 1))
 			{
-				queue1CurrentQuantum = 0;
-			}
-			if(queue1CurrentQuantum == QUANTUM1)
-			{
-				if(currentProcess)
-				{
-					//Acabou o quantum, desce o processo pra fila 2
-					TAILQ_REMOVE(currenthead, currentProcess, nodes);
-					TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
-					currentProcess->p.state = READY;
-					currentProcess->p.queue = head2;
-					currentProcess->p.justChangedQueue = 1;
-				}
-				currentProcess = NULL;
-
-				queue1CurrentQuantum = 0;
-				schedulerState = NONE;
-
-				shouldSleep = 0;
-			}
-			else
-			{
-				schedulerState = QUEUE1;
-				currenthead = &head1;
-
-				if(currentProcess == NULL)
-				{
-					currentProcess = GetReadyNew(currenthead);
-					newQueuePrint = 1;
-				}
-				else
-				{
-					currentProcess->p.justChangedQueue = 0;
-				}
-
-				if(currentProcess)
-				{
-					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
-					{
-						currentProcess->p.currentStream += 1;
-						kill(currentProcess->p.pid, SIGCONT);
-						sleep(1);
-						shouldSleep = 0;
-						continue;
-					}
-				}
-				else
-				{
-					continue;
-				}
-
-				if(currentProcess && newQueuePrint)
-				{
-					if(currentProcess->p.state == NEW || currentProcess->p.wasInIO)
-					{
-						currentProcess->p.wasInIO = 0;
-						printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-						kill(currentProcess->p.pid, SIGCONT);
-					}
-					else
-					{
-						printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-					}
-					newQueuePrint = 0;
-					currentProcess->p.state = RUNNING;
-				}
-
-				queue1CurrentQuantum += 1;
-				if(currentProcess)
-				{
-					currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
-				}
-
-				shouldSleep = 1;
+				continue;
 			}
 		}
 		else if((CheckReadyNew(head2) && schedulerState == NONE) || schedulerState == QUEUE2)
 		{
-			if(schedulerState == NONE)
+			if(!schedulerAux(&queue2CurrentQuantum, &shouldSleep, QUANTUM2, 2))
 			{
-				queue2CurrentQuantum = 0;
-			}
-			if(queue2CurrentQuantum == QUANTUM2)
-			{
-				if(currentProcess)
-				{
-					//Acabou o quantum, desce o processo pra fila 3
-					TAILQ_REMOVE(currenthead, currentProcess, nodes);
-					TAILQ_INSERT_TAIL(head3, currentProcess, nodes);
-					currentProcess->p.state = READY;
-					currentProcess->p.queue = head3;
-					currentProcess->p.justChangedQueue = 1;
-				}
-				currentProcess = NULL;
-
-				queue2CurrentQuantum = 0;
-				schedulerState = NONE;
-
-				shouldSleep = 0;
-			}
-			else
-			{
-				schedulerState = QUEUE2;
-				currenthead = head2;
-
-				if(currentProcess == NULL)
-				{
-					currentProcess = GetReadyNew(currenthead);
-					newQueuePrint = 1;
-				}
-				else
-				{
-					currentProcess->p.justChangedQueue = 0;
-				}
-
-				if(currentProcess)
-				{
-					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
-					{
-						currentProcess->p.currentStream += 1;
-						kill(currentProcess->p.pid, SIGCONT);
-						sleep(1);
-						shouldSleep = 0;
-						continue;
-					}
-				}
-				else
-				{
-					continue;
-				}
-
-				if(currentProcess && newQueuePrint)
-				{
-					if(currentProcess->p.state == NEW || currentProcess->p.wasInIO)
-					{
-						currentProcess->p.wasInIO = 0;
-						printf("Fila 2\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-						kill(currentProcess->p.pid, SIGCONT);
-					}
-					else
-					{
-						printf("Fila 2\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-					}
-					newQueuePrint = 0;
-					currentProcess->p.state = RUNNING;
-				}
-
-				queue2CurrentQuantum += 1;
-				if(currentProcess)
-				{
-					currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
-				}
-
-				shouldSleep = 1;
+				continue;
 			}
 		}
 		else if((CheckReadyNew(head3) && schedulerState == NONE) || schedulerState == QUEUE3)
 		{
-			if(schedulerState == NONE)
+			if(!schedulerAux(&queue3CurrentQuantum, &shouldSleep, QUANTUM3, 3))
 			{
-				queue3CurrentQuantum = 0;
-			}
-			if(queue3CurrentQuantum == QUANTUM3)
-			{
-				//Acabou o quantum, processo permanece na fila
-				if(currentProcess)
-				{
-					currentProcess->p.state = READY;
-				}
-				currentProcess = NULL;
-
-				queue3CurrentQuantum = 0;
-				schedulerState = NONE;
-
-				shouldSleep = 0;
-			}
-			else
-			{
-				schedulerState = QUEUE3;
-				currenthead = head3;
-
-				if(currentProcess == NULL)
-				{
-					currentProcess = GetReadyNew(currenthead);
-					newQueuePrint = 1;
-				}
-				else
-				{
-					currentProcess->p.justChangedQueue = 0;
-				}
-
-				if(currentProcess)
-				{
-					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
-					{
-						currentProcess->p.currentStream += 1;
-						kill(currentProcess->p.pid, SIGCONT);
-						sleep(1);
-						shouldSleep = 0;
-						continue;
-					}
-				}
-				else
-				{
-					continue;
-				}
-
-				if(currentProcess && newQueuePrint)
-				{
-					if(currentProcess->p.state == NEW || currentProcess->p.wasInIO)
-					{
-						currentProcess->p.wasInIO = 0;
-						printf("Fila 3\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-						kill(currentProcess->p.pid, SIGCONT);
-					}
-					else
-					{
-						printf("Fila 3\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-					}
-					newQueuePrint = 0;
-					currentProcess->p.state = RUNNING;
-				}
-
-				queue3CurrentQuantum += 1;
-				if(currentProcess)
-				{
-					currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
-				}
-
-				shouldSleep = 1;
+				continue;
 			}
 		}
 
@@ -599,8 +402,8 @@ void scheduler()
 int main()
 {
 	currenthead = &head1;
-	head2 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head2);
-	head3 = (struct HEAD*)malloc(sizeof(struct HEAD));//TAILQ_HEAD_INITIALIZER(*head3);
+	head2 = (struct HEAD*)malloc(sizeof(struct HEAD));
+	head3 = (struct HEAD*)malloc(sizeof(struct HEAD));
 
 	TAILQ_INIT(&head1);
 	TAILQ_INIT(head2);
