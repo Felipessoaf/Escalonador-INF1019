@@ -115,6 +115,7 @@ void ProcessEnteredIO()
 			}
 		}
 	}
+	schedulerState = NONE;
 	currentProcess = NULL;
 }
 
@@ -288,6 +289,10 @@ int main()
 	{
 		if((CheckReadyNew(&head1) && schedulerState == NONE) || schedulerState == QUEUE1)
 		{
+			if(schedulerState == NONE)
+			{
+				queue1CurrentQuantum = 0;
+			}
 			if(queue1CurrentQuantum == QUANTUM1)
 			{
 //				printf("end fila 1\n");
@@ -338,15 +343,21 @@ int main()
 					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
 					{
 						currentProcess->p.currentStream += 1;
+//						printf("fila 1 cont rajada atualizada\n");
 //						if(currentProcess->p.currentStream < 3)
 //						{
 //							printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
 //									currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
 //						}
 						kill(currentProcess->p.pid, SIGCONT);
+						sleep(1);
 						shouldSleep = 0;
 						continue;
 					}
+				}
+				else
+				{
+					continue;
 				}
 
 //				printf("will wake child\n");
@@ -360,6 +371,11 @@ int main()
 								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
 						kill(currentProcess->p.pid, SIGCONT);
 					}
+					else
+					{
+						printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
+								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+					}
 					newQueuePrint = 0;
 					currentProcess->p.state = RUNNING;
 				}
@@ -368,6 +384,7 @@ int main()
 				if(currentProcess)
 				{
 					currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
+//					printf("fila 1 rajada atualizada\n");
 				}
 
 				shouldSleep = 1;
@@ -375,6 +392,10 @@ int main()
 		}
 		else if((CheckReadyNew(head2) && schedulerState == NONE) || schedulerState == QUEUE2)
 		{
+			if(schedulerState == NONE)
+			{
+				queue2CurrentQuantum = 0;
+			}
 			if(queue2CurrentQuantum == QUANTUM2)
 			{
 //				printf("end fila 2\n");
@@ -425,15 +446,21 @@ int main()
 					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
 					{
 						currentProcess->p.currentStream += 1;
+//						printf("fila 2 cont rajada atualizada\n");
 						//						if(currentProcess->p.currentStream < 3)
 						//						{
 						//							printf("Fila 2\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
 						//									currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
 						//						}
 						kill(currentProcess->p.pid, SIGCONT);
+						sleep(1);
 						shouldSleep = 0;
 						continue;
 					}
+				}
+				else
+				{
+					continue;
 				}
 
 				if(currentProcess && newQueuePrint)
@@ -445,6 +472,11 @@ int main()
 								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
 						kill(currentProcess->p.pid, SIGCONT);
 					}
+					else
+					{
+						printf("Fila 2\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
+								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+					}
 					newQueuePrint = 0;
 					currentProcess->p.state = RUNNING;
 				}
@@ -453,6 +485,7 @@ int main()
 				if(currentProcess)
 				{
 					currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
+//					printf("fila 2 rajada atualizada\n");
 				}
 
 				shouldSleep = 1;
@@ -460,6 +493,10 @@ int main()
 		}
 		else if((CheckReadyNew(head3) && schedulerState == NONE) || schedulerState == QUEUE3)
 		{
+			if(schedulerState == NONE)
+			{
+				queue3CurrentQuantum = 0;
+			}
 //			printf("end fila 3	\n");
 			if(queue3CurrentQuantum == QUANTUM3)
 			{
@@ -505,15 +542,21 @@ int main()
 					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
 					{
 						currentProcess->p.currentStream += 1;
+//						printf("fila 3 cont rajada atualizada\n");
 						//						if(currentProcess->p.currentStream < 3)
 						//						{
 						//							printf("Fila 3\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
 						//									currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
 						//						}
 						kill(currentProcess->p.pid, SIGCONT);
+						sleep(1);
 						shouldSleep = 0;
 						continue;
 					}
+				}
+				else
+				{
+					continue;
 				}
 
 				if(currentProcess && newQueuePrint)
@@ -525,6 +568,11 @@ int main()
 								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
 						kill(currentProcess->p.pid, SIGCONT);
 					}
+					else
+					{
+						printf("Fila 3\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
+								currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+					}
 					newQueuePrint = 0;
 					currentProcess->p.state = RUNNING;
 				}
@@ -533,6 +581,7 @@ int main()
 				if(currentProcess)
 				{
 					currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
+//					printf("fila 3 rajada atualizada\n");
 				}
 
 				shouldSleep = 1;
