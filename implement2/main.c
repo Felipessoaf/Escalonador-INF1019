@@ -322,14 +322,14 @@ int schedulerAux(int *currentQuantum, int *shouldSleep, int quantumMax, int queu
 			if(currentProcess->p.state == NEW || currentProcess->p.wasInIO)
 			{
 				currentProcess->p.wasInIO = 0;
-				printf("Fila %d\nProcesso: %s | Rajada: %d | Tempo restante: %d\n", queue,currentProcess->p.programName,
+				printf("\nFila %d\nProcesso: %s | Rajada: %d | Tempo restante: %d\n", queue,currentProcess->p.programName,
 						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
 				kill(currentProcess->p.pid, SIGCONT);
 			}
 			else
 			{
-				printf("Fila %d\nProcesso: %s | Rajada: %d | Tempo restante: %d\n", queue,currentProcess->p.programName,
-						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+				printf("\nFila %d\nProcesso: %s | Rajada: %d | Tempo restante: %d | PID: %d\n", queue,currentProcess->p.programName,
+						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream], currentProcess->p.pid);
 			}
 			newQueuePrint = 0;
 			currentProcess->p.state = RUNNING;
@@ -393,7 +393,7 @@ void scheduler()
 
 		if(head1.tqh_first == NULL && head2->tqh_first == NULL && head3->tqh_first == NULL)
 		{
-			printf("ACABOU\n");
+			printf("\nNenhum processo sobrando\n");
 			return;
 		}
 	}

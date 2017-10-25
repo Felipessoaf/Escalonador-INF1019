@@ -1,0 +1,106 @@
+----------------------------------------------------------------
+Digite o comando 'exec <nomedoprograma> (n1,n2,n3)'
+exec prog1 (1,2,3)
+s
+
+Fila 1
+Processo: prog1 | Rajada: 1 | Tempo restante: 1
+18505 executando 1 rajada
+18505 will enter IO
+
+Fila 2
+Processo: prog1 | Rajada: 2 | Tempo restante: 2
+18505 executando 2 rajada
+18505 will enter IO
+
+Fila 3
+Processo: prog1 | Rajada: 3 | Tempo restante: 3
+18505 executando 3 rajada
+
+Nenhum processo sobrando
+----------------------------------------------------------------
+Digite o comando 'exec <nomedoprograma> (n1,n2,n3)'
+exec prog1 (10,10,10)
+s
+
+Fila 1
+Processo: prog1 | Rajada: 1 | Tempo restante: 10
+18513 executando 1 rajada
+
+Fila 2
+Processo: prog1 | Rajada: 1 | Tempo restante: 9 | PID: 18513
+
+Fila 3
+Processo: prog1 | Rajada: 1 | Tempo restante: 7 | PID: 18513
+
+Fila 3
+Processo: prog1 | Rajada: 1 | Tempo restante: 3 | PID: 18513
+18513 will enter IO
+
+Fila 2
+Processo: prog1 | Rajada: 2 | Tempo restante: 10
+18513 executando 2 rajada
+
+Fila 3
+Processo: prog1 | Rajada: 2 | Tempo restante: 8 | PID: 18513
+
+Fila 3
+Processo: prog1 | Rajada: 2 | Tempo restante: 4 | PID: 18513
+18513 will enter IO
+
+Fila 2
+Processo: prog1 | Rajada: 3 | Tempo restante: 10
+18513 executando 3 rajada
+
+Fila 3
+Processo: prog1 | Rajada: 3 | Tempo restante: 8 | PID: 18513
+
+Fila 3
+Processo: prog1 | Rajada: 3 | Tempo restante: 4 | PID: 18513
+
+Nenhum processo sobrando
+----------------------------------------------------------------
+Digite o comando 'exec <nomedoprograma> (n1,n2,n3)'
+exec prog1 (1,2,3)
+exec prog1 (2,2,2)
+s
+
+Fila 1
+Processo: prog1 | Rajada: 1 | Tempo restante: 1
+18531 executando 1 rajada
+
+Fila 1
+Processo: prog1 | Rajada: 1 | Tempo restante: 2
+18532 executando 1 rajada
+18531 will enter IO
+
+Fila 2
+Processo: prog1 | Rajada: 1 | Tempo restante: 1 | PID: 18532
+18532 will enter IO
+
+Fila 2
+Processo: prog1 | Rajada: 2 | Tempo restante: 2
+18531 executando 2 rajada
+
+Fila 1
+Processo: prog1 | Rajada: 2 | Tempo restante: 2
+18532 executando 2 rajada
+
+Fila 2
+Processo: prog1 | Rajada: 2 | Tempo restante: 1 | PID: 18532
+18532 will enter IO
+18531 will enter IO
+
+Fila 1
+Processo: prog1 | Rajada: 3 | Tempo restante: 2
+18532 executando 3 rajada
+
+Fila 2
+Processo: prog1 | Rajada: 3 | Tempo restante: 1 | PID: 18532
+
+Fila 3
+Processo: prog1 | Rajada: 3 | Tempo restante: 3
+18531 executando 3 rajada
+
+Nenhum processo sobrando
+----------------------------------------------------------------
