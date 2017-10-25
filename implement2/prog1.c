@@ -12,76 +12,65 @@ int cont;
 
 void handler()
 {
-cont =1;	
+	cont = 1;
 }
 
 int main(int argc, char *argv[])
 {
 	int i,j,k;
-cont = 0;
-//	printf("vou parar\n");
-	//kill(getpid(), SIGSTOP);
-//	printf("voltou\n");
 	signal(SIGCONT, handler);
-	printf("%d executando\n", getpid());
-	for (;;)
-	{
-		if(cont)
-{
-break;
-}
-		//while(1)
-//{}
-//		printf("vou dormir filho\n");
-//		sleep(1);
-//		if(i < strtol(argv[1], NULL, 10) - 1)
-//		{
-//			kill(getpid(), SIGSTOP);
-//		}
-//		printf("filho acordou\n");
-	}
-
-	//avisa IO
-//	printf("will enter IO\n");
-	kill(getppid(), SIGUSR1);
-//	kill(getpid(), SIGSTOP);
-
-	printf("%d executando\n", getpid());
-	for (;;)
-	{
-if(cont)
-{
-break;
-}
-		//printf("prog1-2: %d\n", getpid());
-//		sleep(1);
-//		if(j < strtol(argv[2], NULL, 10) - 1)
-//		{
-			//kill(getpid(), SIGSTOP);
-//		}
-	}
-
-	//avisa IO
-//	printf("will enter IO\n");
-	kill(getppid(), SIGUSR1);
+	cont = 0;
+	//	printf("vou parar\n");
 	//kill(getpid(), SIGSTOP);
-
-	printf("%d executando\n", getpid());
-	for (;;)//k = 0; k < strtol(argv[3], NULL, 10); k++)
+	//	printf("voltou\n");
+	for(;cont == 0;)
 	{
-if(cont)
-{
-break;
-}
-		//printf("prog1-3: %d\n", getpid());
-//		sleep(1);
-//		if(k < strtol(argv[3], NULL, 10) - 1)
-//		{
-			//kill(getpid(), SIGSTOP);
-//		}
+
 	}
-	
-//	kill(getppid(), SIGUSR2);
+	cont = 0;
+	printf("%d executando 1 rajada\n", getpid());
+	for(;cont == 0;)
+	{
+
+	}
+	cont = 0;
+
+	//avisa IO
+	printf("%d will enter IO\n", getpid());
+	kill(getppid(), SIGUSR1);
+
+	for(;cont == 0;)
+	{
+
+	}
+	cont = 0;
+
+	printf("%d executando 2 rajada\n", getpid());
+
+	for(;cont == 0;)
+	{
+
+	}
+	cont = 0;
+
+	//avisa IO
+	printf("%d will enter IO\n", getpid());
+	kill(getppid(), SIGUSR1);
+
+	for(;cont == 0;)
+	{
+
+	}
+	cont = 0;
+
+	printf("%d executando 3 rajada\n", getpid());
+
+	for(;cont == 0;)
+	{
+
+	}
+	cont = 0;
+
 	return 0;
 }
 
