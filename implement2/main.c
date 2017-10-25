@@ -66,35 +66,20 @@ SchedulerState schedulerState;
 
 void DeleteChildProcess()
 {
-//	printf("EntrouDelete\n");
-//	int saved_errno = errno;
-//	while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {}
-//	errno = saved_errno;
-//	printf("SaiuDelete\n");
-
 	if(currentProcess != NULL)
 	{
-//		if(currentProcess->p.aboutToTerminate)
-//		{
-			TAILQ_REMOVE(currenthead, currentProcess, nodes);
+		TAILQ_REMOVE(currenthead, currentProcess, nodes);
 
-			free(currentProcess);
-			currentProcess = NULL;
-			schedulerState = NONE;
-//		}
+		free(currentProcess);
+		currentProcess = NULL;
+		schedulerState = NONE;
 	}
 }
-
-//void AboutToTerminate()
-//{
-//	currentProcess->p.aboutToTerminate = 1;
-//}
 
 void ProcessEnteredIO()
 {
 	if(currentProcess)
 	{
-//		printf("Processo %d entrou em IO\n", currentProcess->p.pid);
 		currentProcess->p.state = WAITING;
 		currentProcess->p.timeInIO = 0;
 		if(!currentProcess->p.justChangedQueue)
@@ -126,7 +111,6 @@ void AddToQueue(struct HEAD *head, int stream[3], char *progName)
 	new = (ProcessNode*) malloc(sizeof(ProcessNode));
 	new->p.state = NEW;
 	new->p.timeInIO = 0;
-//	new->p.aboutToTerminate = 0;
 	new->p.justChangedQueue = 0;
 	new->p.wasInIO = 0;
 	new->p.currentStream = 0;
@@ -235,8 +219,6 @@ int main()
 	queue1CurrentQuantum = queue2CurrentQuantum = queue3CurrentQuantum = 0;
 	schedulerState = NONE;
 
-//	signal(SIGCHLD,DeleteChildProcess);
-//	signal(SIGCHLD,SIG_IGN);
 	struct sigaction sa;
 	sa.sa_handler = &DeleteChildProcess;
 	sigemptyset(&sa.sa_mask);
@@ -247,7 +229,6 @@ int main()
 	}
 
 	signal(SIGUSR1,ProcessEnteredIO);
-//	signal(SIGUSR2,AboutToTerminate);
 
 	printf("Digite o comando 'exec <nomedoprograma> (n1,n2,n3)'\n");
 	while(scanf(" exec %s (%d,%d,%d)", &programName, &stream[0], &stream[1], &stream[2]) == 4)
@@ -269,8 +250,6 @@ int main()
 			sprintf(arg1, "%d", tmp->p.streams[0]);
 			sprintf(arg2, "%d", tmp->p.streams[1]);
 			sprintf(arg3, "%d", tmp->p.streams[2]);
-//			kill(getpid(), SIGSTOP);
-//			printf("exec \n");
 #ifdef ECLIPSE
 			if(execl("/home/felipessoaf/Desktop/EscalonadorRepo/implement2/prog1", tmp->p.programName, arg1, arg2, arg3, (char*)NULL) == -1)
 #else
@@ -295,7 +274,6 @@ int main()
 			}
 			if(queue1CurrentQuantum == QUANTUM1)
 			{
-//				printf("end fila 1\n");
 				if(currentProcess)
 				{
 					//Acabou o quantum, desce o processo pra fila 2
@@ -304,16 +282,7 @@ int main()
 					currentProcess->p.state = READY;
 					currentProcess->p.queue = head2;
 					currentProcess->p.justChangedQueue = 1;
-	//				signal(SIGCHLD,SIG_IGN);
-//					kill(currentProcess->p.pid, SIGSTOP);
-//					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
-//					{
-////						printf("fila 1 entra em io ai\n");
-//						currentProcess->p.state = WAITING;
-//						kill(currentProcess->p.pid, SIGCONT);
-//					}
 				}
-//				signal(SIGCHLD,DeleteChildProcess);
 				currentProcess = NULL;
 
 				queue1CurrentQuantum = 0;
@@ -323,8 +292,6 @@ int main()
 			}
 			else
 			{
-//				printf("fila 1\n");
-
 				schedulerState = QUEUE1;
 				currenthead = &head1;
 
@@ -343,12 +310,6 @@ int main()
 					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
 					{
 						currentProcess->p.currentStream += 1;
-//						printf("fila 1 cont rajada atualizada\n");
-//						if(currentProcess->p.currentStream < 3)
-//						{
-//							printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-//									currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-//						}
 						kill(currentProcess->p.pid, SIGCONT);
 						sleep(1);
 						shouldSleep = 0;
@@ -359,8 +320,6 @@ int main()
 				{
 					continue;
 				}
-
-//				printf("will wake child\n");
 
 				if(currentProcess && newQueuePrint)
 				{
@@ -384,7 +343,6 @@ int main()
 				if(currentProcess)
 				{
 					currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
-//					printf("fila 1 rajada atualizada\n");
 				}
 
 				shouldSleep = 1;
@@ -398,7 +356,6 @@ int main()
 			}
 			if(queue2CurrentQuantum == QUANTUM2)
 			{
-//				printf("end fila 2\n");
 				if(currentProcess)
 				{
 					//Acabou o quantum, desce o processo pra fila 3
@@ -407,16 +364,7 @@ int main()
 					currentProcess->p.state = READY;
 					currentProcess->p.queue = head3;
 					currentProcess->p.justChangedQueue = 1;
-	//				signal(SIGCHLD,SIG_IGN);
-//					kill(currentProcess->p.pid, SIGSTOP);
-//					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
-//					{
-////						printf("fila 2 entra em io ai\n");
-//						currentProcess->p.state = WAITING;
-//						kill(currentProcess->p.pid, SIGCONT);
-//					}
 				}
-//				signal(SIGCHLD,DeleteChildProcess);
 				currentProcess = NULL;
 
 				queue2CurrentQuantum = 0;
@@ -426,8 +374,6 @@ int main()
 			}
 			else
 			{
-//				printf("fila 2\n");
-
 				schedulerState = QUEUE2;
 				currenthead = head2;
 
@@ -446,12 +392,6 @@ int main()
 					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
 					{
 						currentProcess->p.currentStream += 1;
-//						printf("fila 2 cont rajada atualizada\n");
-						//						if(currentProcess->p.currentStream < 3)
-						//						{
-						//							printf("Fila 2\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-						//									currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-						//						}
 						kill(currentProcess->p.pid, SIGCONT);
 						sleep(1);
 						shouldSleep = 0;
@@ -485,7 +425,6 @@ int main()
 				if(currentProcess)
 				{
 					currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
-//					printf("fila 2 rajada atualizada\n");
 				}
 
 				shouldSleep = 1;
@@ -497,22 +436,13 @@ int main()
 			{
 				queue3CurrentQuantum = 0;
 			}
-//			printf("end fila 3	\n");
 			if(queue3CurrentQuantum == QUANTUM3)
 			{
 				//Acabou o quantum, processo permanece na fila
 				if(currentProcess)
 				{
 					currentProcess->p.state = READY;
-//					currentProcess->p.justChangedQueue = 1;
-	//				signal(SIGCHLD,SIG_IGN);
-//					kill(currentProcess->p.pid, SIGSTOP);
-//					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
-//					{
-//						kill(currentProcess->p.pid, SIGCONT);
-//					}
 				}
-//				signal(SIGCHLD,DeleteChildProcess);
 				currentProcess = NULL;
 
 				queue3CurrentQuantum = 0;
@@ -522,8 +452,6 @@ int main()
 			}
 			else
 			{
-//				printf("fila 3\n");
-
 				schedulerState = QUEUE3;
 				currenthead = head3;
 
@@ -542,12 +470,6 @@ int main()
 					if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
 					{
 						currentProcess->p.currentStream += 1;
-//						printf("fila 3 cont rajada atualizada\n");
-						//						if(currentProcess->p.currentStream < 3)
-						//						{
-						//							printf("Fila 3\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-						//									currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-						//						}
 						kill(currentProcess->p.pid, SIGCONT);
 						sleep(1);
 						shouldSleep = 0;
@@ -581,7 +503,6 @@ int main()
 				if(currentProcess)
 				{
 					currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
-//					printf("fila 3 rajada atualizada\n");
 				}
 
 				shouldSleep = 1;
@@ -594,9 +515,7 @@ int main()
 		}
 		if(shouldSleep)
 		{
-//			printf("vou dormir\n");
 			sleep(1);
-//			printf("acordei\n");
 			UpdateIO(&head1);
 			UpdateIO(head2);
 			UpdateIO(head3);
