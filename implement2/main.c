@@ -15,7 +15,7 @@
 #define QUANTUM1 1
 #define QUANTUM2 2
 #define QUANTUM3 4
-#define ECLIPSE
+//#define ECLIPSE
 
 typedef enum state
 {
@@ -236,90 +236,90 @@ void interpreter()
 	}
 }
 
-void schedulerAux(int *currentQuantum, int *shouldSleep, int quantumMax)
-{
-	int newQueuePrint = 0;
-
-	if(schedulerState == NONE)
-	{
-		*currentQuantum = 0;
-	}
-	if(*currentQuantum == quantumMax)
-	{
-		if(currentProcess)
-		{
-			//Acabou o quantum, desce o processo pra fila 2
-			TAILQ_REMOVE(currenthead, currentProcess, nodes);
-			TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
-			currentProcess->p.state = READY;
-			currentProcess->p.queue = head2;
-			currentProcess->p.justChangedQueue = 1;
-		}
-		currentProcess = NULL;
-
-		*currentQuantum = 0;
-		schedulerState = NONE;
-
-		shouldSleep = 0;
-	}
-	else
-	{
-		schedulerState = QUEUE1;
-		currenthead = &head1;
-
-		if(currentProcess == NULL)
-		{
-			currentProcess = GetReadyNew(currenthead);
-			newQueuePrint = 1;
-		}
-		else
-		{
-			currentProcess->p.justChangedQueue = 0;
-		}
-
-		if(currentProcess)
-		{
-			if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
-			{
-				currentProcess->p.currentStream += 1;
-				kill(currentProcess->p.pid, SIGCONT);
-				sleep(1);
-				shouldSleep = 0;
-				continue;
-			}
-		}
-		else
-		{
-			continue;
-		}
-
-		if(currentProcess && newQueuePrint)
-		{
-			if(currentProcess->p.state == NEW || currentProcess->p.wasInIO)
-			{
-				currentProcess->p.wasInIO = 0;
-				printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-				kill(currentProcess->p.pid, SIGCONT);
-			}
-			else
-			{
-				printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
-						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
-			}
-			newQueuePrint = 0;
-			currentProcess->p.state = RUNNING;
-		}
-
-		*currentQuantum += 1;
-		if(currentProcess)
-		{
-			currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
-		}
-
-		shouldSleep = 1;
-	}
-}
+//void schedulerAux(int *currentQuantum, int *shouldSleep, int quantumMax)
+//{
+//	int newQueuePrint = 0;
+//
+//	if(schedulerState == NONE)
+//	{
+//		*currentQuantum = 0;
+//	}
+//	if(*currentQuantum == quantumMax)
+//	{
+//		if(currentProcess)
+//		{
+//			//Acabou o quantum, desce o processo pra fila 2
+//			TAILQ_REMOVE(currenthead, currentProcess, nodes);
+//			TAILQ_INSERT_TAIL(head2, currentProcess, nodes);
+//			currentProcess->p.state = READY;
+//			currentProcess->p.queue = head2;
+//			currentProcess->p.justChangedQueue = 1;
+//		}
+//		currentProcess = NULL;
+//
+//		*currentQuantum = 0;
+//		schedulerState = NONE;
+//
+//		shouldSleep = 0;
+//	}
+//	else
+//	{
+//		schedulerState = QUEUE1;
+//		currenthead = &head1;
+//
+//		if(currentProcess == NULL)
+//		{
+//			currentProcess = GetReadyNew(currenthead);
+//			newQueuePrint = 1;
+//		}
+//		else
+//		{
+//			currentProcess->p.justChangedQueue = 0;
+//		}
+//
+//		if(currentProcess)
+//		{
+//			if(currentProcess->p.streams[currentProcess->p.currentStream] == 0)
+//			{
+//				currentProcess->p.currentStream += 1;
+//				kill(currentProcess->p.pid, SIGCONT);
+//				sleep(1);
+//				shouldSleep = 0;
+//				continue;
+//			}
+//		}
+//		else
+//		{
+//			continue;
+//		}
+//
+//		if(currentProcess && newQueuePrint)
+//		{
+//			if(currentProcess->p.state == NEW || currentProcess->p.wasInIO)
+//			{
+//				currentProcess->p.wasInIO = 0;
+//				printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
+//						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+//				kill(currentProcess->p.pid, SIGCONT);
+//			}
+//			else
+//			{
+//				printf("Fila 1\nProcesso: %s | Rajada: %d | Tempo restante: %d\n",currentProcess->p.programName,
+//						currentProcess->p.currentStream + 1, currentProcess->p.streams[currentProcess->p.currentStream]);
+//			}
+//			newQueuePrint = 0;
+//			currentProcess->p.state = RUNNING;
+//		}
+//
+//		*currentQuantum += 1;
+//		if(currentProcess)
+//		{
+//			currentProcess->p.streams[currentProcess->p.currentStream] -= 1;
+//		}
+//
+//		shouldSleep = 1;
+//	}
+//}
 
 void scheduler()
 {
