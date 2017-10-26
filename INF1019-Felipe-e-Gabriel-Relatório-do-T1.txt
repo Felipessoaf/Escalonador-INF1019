@@ -1,0 +1,21 @@
+Escalonamento em Múltiplos Níveis com Feedback
+
+Relatório 
+
+Felipe Pessoa de Freitas - 1411716
+Gabriel Medeiros - 1320751
+
+No nosso teste, os programas que serão executados serão o prog1.c de diversas maneiras e com diversos tipos diferentes de rajadas com [I/O] entre elas.
+
+No primeiro teste, ele entra um processo com (1,2,3), que denota que ele entra com uma rajada de 1 unidade de tempo, depois entra em [I/O] e, depois, começa outra rajada, dessa vez de 2... e assim vai.
+
+No segundo teste, ele entra um processo com (10,10,10). Já no terceiro, entraria dois processos: um (1,2,3) e outro (2,2,2), que alternam entre si. Um quarto teste envolveria três processos, dessa vez (1,2,3), (3,5,1) e (2,7,5), que também alternariam entre si. Finalmente, um quinto e último teste com (0,2,1) para testar o que acontece com uma rajada nula.
+
+Todos os testes corresponderam às expectativas, menos o último, que teve como uma das rajadas o valor 0, puramente para fim de testes.	
+
+Por exemplo, o primeiro teste, de rajadas (1,2,3). Ele executa um quantum na fila 1, então desce. Entra em IO, espera os 3 segundos, quando retorna está na fila 2, e executa mais dois quantum’s. Em seguida, entra em IO, esperando novamente mais 3 segundos. Ao retornar, está na fila 3, e executa os últimos 3 quantum’s da rajada que sobrou.
+
+No caso do último teste, que possui as rajadas (0,2,1), como não tratamos o valor 0, o escalonador não respeita a fila como poderia, então a execução acaba ficando “errada”.
+
+Como os output são grandes, estão anexados em um .txt separado os resultados desses testes.
+	
